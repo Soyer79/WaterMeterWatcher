@@ -228,11 +228,11 @@ void paramSave(){
 
 void waterControl() {
   if (millis() - prev_min_millis > 60000) {
-    if ((clock1.getHour() < 1) && (ResetTempCounterNight = false)) {
+    if (night && (ResetTempCounterNight = false)) {
       tempCounterNight = counter;
       ResetTempCounterNight = true;
     }
-    else if ((clock1.getHour() == 6) && (clock1.getMin() < 2) && (ResetTempCounterNight = true)) {
+    else if (night && (ResetTempCounterNight = true)) {
       tempCounterNight = counter;
       ResetTempCounterNight = false;
     }
@@ -242,11 +242,31 @@ void waterControl() {
     tempCounter = counter;
     prev_min_millis=millis();
   }
-  if ((prev_hour_millis - millis() > 3600000) && (clock1.getHour() < 6)) {
+  if ((prev_hour_millis - millis() > 3600000) && night) {
     if (counter > (tempCounterNight + level_alarm_night)) {
       Supla::Notification::Send(-1, dev_name_message, message);
     }
     tempCounterNight = counter;
     prev_hour_millis=millis();
+  }
+}
+void isNight(){
+  if((millis()-prev_minute_millis)> 30000){
+     if(clock1.getHour() >= night_h_start) {
+      if(!night){
+        tempCounterNight = counter;
+        night = true;
+      }
+    }
+    else if(clock1.getHour() < night_h_stop){
+      if(!night){
+       tempCounterNight = counter;
+       night = true;
+    }
+    else{
+      night = false;
+    }
+    }
+  prev_minute_millis=millis(); 
   }
 }
