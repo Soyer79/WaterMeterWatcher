@@ -126,6 +126,7 @@ void loop() {
   } else {
     client.loop();
   }
+  isNight();
   waterControl();
 }
 
