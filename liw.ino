@@ -228,14 +228,6 @@ void paramSave(){
 
 void waterControl() {
   if (millis() - prev_min_millis > 60000) {
-    if (night && (ResetTempCounterNight = false)) {
-      tempCounterNight = counter;
-      ResetTempCounterNight = true;
-    }
-    else if (night && (ResetTempCounterNight = true)) {
-      tempCounterNight = counter;
-      ResetTempCounterNight = false;
-    }
     if (counter > (tempCounter + level_alarm)) {
       Supla::Notification::Send(-1, dev_name_message, message);
     }
