@@ -13,6 +13,7 @@
 #include <PubSubClient.h>
 #include <supla/clock/clock.h> //int clock1.getYear(); getMonth(); getDay(); getDayOfWeek();1 - Sunday, 2 - Monday getHour(); getMin(); getSec();
 #include "HWCDC.h"
+#include <supla/device/enter_cfg_mode_after_power_cycle.h>
 
 HWCDC USBSerial;
 Supla::ESPWifi wifi;
@@ -57,7 +58,9 @@ int32_t level_alarm_night = 10;
 String top1 = "xxx";
 String tim;
 
+boolean night =0;
 unsigned long prev_min_millis;
+unsigned long prev_minute_millis;
 unsigned long prev_hour_millis;
 unsigned long lastReconnectAttempt = 0;
 
@@ -78,6 +81,7 @@ void setup() {
   new Supla::Html::CustomTextParameter(PARAM9, "push message", 25);
   new Supla::Html::CustomParameter(PARAM10, "level alarm");
   new Supla::Html::CustomParameter(PARAM11, "level alarm night");
+  new Supla::Device::EnterCfgModeAfterPowerCycle(15000, 3, true);
   Supla::Notification::RegisterNotification(-1);
   SuplaDevice.setSuplaCACert(suplaCACert);
   SuplaDevice.setSupla3rdPartyCACert(supla3rdCACert);
@@ -114,7 +118,6 @@ void setup() {
 
 void loop() {
   SuplaDevice.iterate();
-
   if (!client.connected()) {
     long now = millis();
     if (now - lastReconnectAttempt > 5000) {
@@ -237,7 +240,9 @@ void waterControl() {
   }
   if ((prev_hour_millis - millis() > 3600000) && night) {
     if (counter > (tempCounterNight + level_alarm_night)) {
-      Supla::Notification::Send(-1, dev_name_message, message);
+      String n = "NIGHT: ";
+      String n_message = n + message;
+      Supla::Notification::Send(-1, dev_name_message, n_message.c_str());
     }
     tempCounterNight = counter;
     prev_hour_millis=millis();
@@ -245,20 +250,36 @@ void waterControl() {
 }
 void isNight(){
   if((millis()-prev_minute_millis)> 30000){
-     if(clock1.getHour() >= night_h_start) {
-      if(!night){
-        tempCounterNight = counter;
-        night = true;
+    if(night_h_start < night_h_stop){
+      if((clock1.getHour() >= night_h_start) && (clock1.getHour() < night_h_stop)){
+        if(!night){
+          tempCounterNight = counter;
+          prev_hour_millis=millis();
+          night = true;
+        }
+      }
+      else{
+        night = false;
       }
     }
-    else if(clock1.getHour() < night_h_stop){
-      if(!night){
-       tempCounterNight = counter;
-       night = true;
-    }
-    else{
-      night = false;
-    }
+    else if(night_h_start > night_h_stop){ 
+      if(clock1.getHour() >= night_h_start){
+        if(!night){
+         tempCounterNight = counter;
+         prev_hour_millis=millis();
+         night = true;
+        }
+      }
+      else if(clock1.getHour() < night_h_stop){
+        if(!night){
+          tempCounterNight = counter;
+          prev_hour_millis=millis();
+          night = true;
+        }
+      }
+      else{
+       night = false;
+      }
     }
   prev_minute_millis=millis(); 
   }
