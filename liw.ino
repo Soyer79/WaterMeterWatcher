@@ -129,7 +129,7 @@ void loop() {
   } else {
     client.loop();
   }
-  isNight();
+  nightReady();
   waterControl();
 }
 
@@ -248,39 +248,27 @@ void waterControl() {
     prev_hour_millis=millis();
   }
 }
-void isNight(){
-  if((millis()-prev_minute_millis)> 30000){
-    if(night_h_start < night_h_stop){
-      if((clock1.getHour() >= night_h_start) && (clock1.getHour() < night_h_stop)){
-        if(!night){
-          tempCounterNight = counter;
-          prev_hour_millis=millis();
-          night = true;
-        }
-      }
-      else{
-        night = false;
-      }
+static bool isNight(int32_t tim, int32_t night_start, int32_t night_end){
+    if(night_start < night_end){
+      USBSerial.print("hour.............: ");
+     USBSerial.println(tim);
+      return tim >= night_start && tim < night_end;
     }
-    else if(night_h_start > night_h_stop){ 
-      if(clock1.getHour() >= night_h_start){
-        if(!night){
-         tempCounterNight = counter;
-         prev_hour_millis=millis();
-         night = true;
-        }
-      }
-      else if(clock1.getHour() < night_h_stop){
-        if(!night){
-          tempCounterNight = counter;
-          prev_hour_millis=millis();
-          night = true;
-        }
-      }
-      else{
-       night = false;
-      }
+    else{
+    	return tim >= night_start || tim < night_end;
     }
-  prev_minute_millis=millis(); 
+}
+void nightReady(){
+  if((millis()-prev_minute_millis)> 30000){//sprawdzamy czas co 30s
+
+     bool nn = isNight(clock1.getHour(), night_h_start, night_h_stop);
+  
+     if (!night && nn){
+          tempCounterNight = counter;  
+     }   
+     night = nn;
+     USBSerial.print("NIGHT:.............: ");
+     USBSerial.println(night);
+     prev_minute_millis=millis(); 
   }
 }
